@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>VYD Network 연결 · MetaMask 자동 등록</title>
+<meta name="description" content="버튼 한 번으로 VYD 네트워크를 MetaMask에 추가하세요. 빠르고 안전한 EVM 기반 프라이빗 블록체인.">
+<meta name="theme-color" content="#070b16">
+<meta property="og:title" content="VYD Network 연결">
+<meta property="og:description" content="버튼 한 번으로 VYD 네트워크를 MetaMask에 추가하세요.">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  :root{
+    --bg:#070b16;
+    --bg-glow-a:rgba(34,211,238,.14);
+    --bg-glow-b:rgba(139,92,246,.16);
+    --card:#0d1424;
+    --card-2:#101a2e;
+    --line:rgba(148,163,184,.14);
+    --line-strong:rgba(148,163,184,.24);
+    --ink:#eef2fb;
+    --ink-mid:#97a3ba;
+    --ink-dim:#5f6d86;
+    --cyan:#22d3ee;
+    --violet:#8b5cf6;
+    --grad:linear-gradient(135deg,#22d3ee 0%,#7c8cf8 48%,#a855f7 100%);
+    --ok:#34d399;
+    --warn:#fbbf24;
+    --bad:#f87171;
+    --mono:ui-monospace,SFMono-Regular,"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
+    --sans:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:var(--sans);
+    color:var(--ink);
+    background:var(--bg);
+    min-height:100dvh;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    padding:
+      max(20px,env(safe-area-inset-top))
+      max(16px,env(safe-area-inset-right))
+      max(28px,env(safe-area-inset-bottom))
+      max(16px,env(safe-area-inset-left));
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    position:relative;
+    overflow-x:hidden;
+  }
+  body::before{
+    content:"";
+    position:fixed;
+    inset:-30% -10% auto -10%;
+    height:70vh;
+    background:
+      radial-gradient(60% 60% at 22% 0%,var(--bg-glow-a),transparent 70%),
+      radial-gradient(55% 55% at 82% 12%,var(--bg-glow-b),transparent 72%);
+    filter:blur(8px);
+    z-index:0;
+    pointer-events:none;
+  }
+
+  .card{
+    position:relative;
+    z-index:1;
+    width:100%;
+    max-width:452px;
+    background:linear-gradient(180deg,var(--card-2),var(--card));
+    border:1px solid var(--line);
+    border-radius:26px;
+    padding:30px 22px 24px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.05) inset,
+      0 30px 80px -30px rgba(3,7,18,.9),
+      0 0 0 1px rgba(3,7,18,.4);
+  }
+
+  /* ---------- brand ---------- */
+  .brand{display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px}
+  .brand__logo{width:66px;height:66px;filter:drop-shadow(0 10px 22px rgba(124,140,248,.35))}
+  .brand__name{
+    margin:0;font-size:1.72rem;font-weight:800;letter-spacing:-.02em;
+    background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .brand__tag{margin:-4px 0 0;font-size:.92rem;color:var(--ink-mid);font-weight:500}
+
+  /* ---------- live status ---------- */
+  .live{
+    margin:20px auto 0;width:max-content;max-width:100%;
+    display:flex;align-items:center;gap:9px;
+    padding:8px 15px;border-radius:999px;
+    background:rgba(148,163,184,.06);
+    border:1px solid var(--line);
+    font-size:.86rem;font-weight:600;
+  }
+  .live__dot{
+    width:9px;height:9px;border-radius:50%;flex:none;
+    background:var(--warn);box-shadow:0 0 0 0 rgba(251,191,36,.55);
+    animation:pulse 1.9s ease-out infinite;
+  }
+  .live[data-state="online"] .live__dot{background:var(--ok);box-shadow:0 0 0 0 rgba(52,211,153,.55);animation-name:pulseOk}
+  .live[data-state="offline"] .live__dot{background:var(--bad);animation:none}
+  .live[data-state="online"] .live__text{color:var(--ink)}
+  .live[data-state="offline"] .live__text{color:#fca5a5}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(251,191,36,.5)}70%{box-shadow:0 0 0 8px rgba(251,191,36,0)}100%{box-shadow:0 0 0 0 rgba(251,191,36,0)}}
+  @keyframes pulseOk{0%{box-shadow:0 0 0 0 rgba(52,211,153,.5)}70%{box-shadow:0 0 0 8px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}
+
+  /* ---------- metrics ---------- */
+  .metrics{
+    margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;
+  }
+  .metric{
+    background:rgba(148,163,184,.05);
+    border:1px solid var(--line);
+    border-radius:14px;padding:12px 8px;text-align:center;min-width:0;
+  }
+  .metric__k{display:block;font-size:.68rem;color:var(--ink-dim);font-weight:600;letter-spacing:.02em;margin-bottom:5px}
+  .metric__v{
+    font-family:var(--mono);font-size:1rem;font-weight:600;color:var(--ink);
+    letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    font-variant-numeric:tabular-nums;
+  }
+  .metric__v[data-live="online"]{color:var(--ok)}
+  .metric__v[data-live="offline"]{color:var(--bad)}
+
+  /* ---------- lead ---------- */
+  .lead{
+    margin:22px 2px 18px;text-align:center;font-size:.98rem;color:var(--ink);
+    font-weight:500;line-height:1.5;
+  }
+  .lead b{font-weight:700}
+
+  /* ---------- buttons ---------- */
+  .cta-group{display:flex;flex-direction:column;gap:11px}
+  .btn{
+    appearance:none;border:0;cursor:pointer;width:100%;
+    min-height:56px;padding:0 18px;border-radius:15px;
+    font-family:inherit;font-size:1.02rem;font-weight:700;letter-spacing:-.01em;
+    display:inline-flex;align-items:center;justify-content:center;gap:10px;
+    transition:transform .14s ease,box-shadow .18s ease,background-color .18s ease,border-color .18s,opacity .18s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .btn:active{transform:translateY(1px) scale(.995)}
+  .btn:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+  .btn svg{flex:none}
+
+  .btn--primary{
+    color:#05121a;background:var(--grad);
+    box-shadow:0 10px 26px -8px rgba(124,140,248,.6),0 2px 0 rgba(255,255,255,.25) inset;
+  }
+  .btn--primary:hover{box-shadow:0 14px 34px -8px rgba(124,140,248,.75),0 2px 0 rgba(255,255,255,.3) inset}
+
+  .btn--outline{
+    color:var(--ink);background:rgba(148,163,184,.05);
+    border:1px solid var(--line-strong);
+  }
+  .btn--outline:hover{background:rgba(148,163,184,.1);border-color:rgba(148,163,184,.36)}
+
+  .btn--ghost{
+    min-height:48px;color:var(--ink-mid);background:transparent;font-size:.92rem;font-weight:600;
+  }
+  .btn--ghost:hover{color:var(--ink)}
+
+  .btn[aria-busy="true"]{pointer-events:none;opacity:.75}
+  .btn[aria-busy="true"] .btn__label{visibility:hidden}
+  .btn[aria-busy="true"]::after{
+    content:"";position:absolute;width:20px;height:20px;border-radius:50%;
+    border:2.5px solid rgba(5,18,26,.35);border-top-color:#05121a;
+    animation:spin .7s linear infinite;
+  }
+  .btn--outline[aria-busy="true"]::after{border-color:rgba(148,163,184,.35);border-top-color:var(--ink)}
+  .btn{position:relative}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ---------- QR ---------- */
+  .qr{margin-top:26px;display:flex;flex-direction:column;align-items:center}
+  .qr__frame{
+    position:relative;width:210px;height:210px;padding:14px;background:#fff;
+    border-radius:20px;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 12px 30px -12px rgba(0,0,0,.6),0 0 0 6px rgba(255,255,255,.04);
+  }
+  #qrcode{width:182px;height:182px;display:flex;align-items:center;justify-content:center}
+  #qrcode canvas,#qrcode img{display:block;width:182px!important;height:182px!important;border-radius:6px}
+  .qr__logo{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:44px;height:44px;background:#fff;border-radius:12px;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 2px 8px rgba(0,0,0,.18);
+  }
+  .qr__logo svg{width:30px;height:30px}
+  .qr__fallback{font-size:.82rem;color:#334155;text-align:center;padding:10px;line-height:1.5}
+  .qr__fallback a{color:#0e7490;word-break:break-all;font-weight:600}
+  .qr__caption{margin:16px 6px 0;text-align:center;font-size:.9rem;color:var(--ink-mid);font-weight:500}
+
+  /* ---------- manual info ---------- */
+  .manual{
+    margin-top:28px;padding-top:24px;border-top:1px solid var(--line);
+    scroll-margin-top:16px;
+  }
+  .sec-title{
+    display:flex;align-items:center;gap:8px;margin:0 0 4px;
+    font-size:1.02rem;font-weight:700;letter-spacing:-.01em;color:var(--ink);
+  }
+  .sec-sub{margin:0 0 16px;font-size:.84rem;color:var(--ink-dim)}
+  .rows{display:flex;flex-direction:column;gap:9px}
+  .row{
+    display:flex;align-items:center;gap:12px;
+    background:rgba(148,163,184,.05);border:1px solid var(--line);
+    border-radius:13px;padding:11px 11px 11px 14px;
+  }
+  .row__body{flex:1;min-width:0}
+  .row__k{display:block;font-size:.72rem;color:var(--ink-dim);font-weight:600;margin-bottom:3px}
+  .row__v{
+    font-family:var(--mono);font-size:.92rem;color:var(--ink);font-weight:600;
+    word-break:break-all;line-height:1.4;
+  }
+  .row__v--muted{color:var(--ink-mid);font-weight:500}
+  .copy{
+    flex:none;width:40px;height:40px;border-radius:11px;cursor:pointer;
+    border:1px solid var(--line-strong);background:rgba(148,163,184,.06);color:var(--ink-mid);
+    display:inline-flex;align-items:center;justify-content:center;
+    transition:background-color .15s,color .15s,border-color .15s,transform .1s;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .copy:hover{background:rgba(34,211,238,.12);color:var(--cyan);border-color:rgba(34,211,238,.4)}
+  .copy:active{transform:scale(.92)}
+  .copy:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+  .copy.done{background:rgba(52,211,153,.15);color:var(--ok);border-color:rgba(52,211,153,.45)}
+  .copy svg{width:18px;height:18px}
+  .copy-all{
+    margin-top:14px;width:100%;min-height:46px;border-radius:12px;cursor:pointer;
+    background:rgba(148,163,184,.05);border:1px solid var(--line-strong);
+    color:var(--ink);font-family:inherit;font-size:.9rem;font-weight:600;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    transition:background-color .15s,border-color .15s;
+  }
+  .copy-all:hover{background:rgba(148,163,184,.1);border-color:rgba(148,163,184,.34)}
+  .copy-all:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+
+  /* ---------- security notice ---------- */
+  .notice{
+    margin-top:24px;padding:16px 16px 15px;border-radius:15px;
+    background:linear-gradient(180deg,rgba(34,211,238,.06),rgba(139,92,246,.05));
+    border:1px solid var(--line);
+  }
+  .notice__head{display:flex;align-items:center;gap:8px;font-size:.9rem;font-weight:700;color:var(--ink);margin-bottom:10px}
+  .notice__head svg{width:18px;height:18px;color:var(--cyan)}
+  .notice ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
+  .notice li{position:relative;padding-left:20px;font-size:.85rem;color:var(--ink-mid);line-height:1.5}
+  .notice li::before{
+    content:"";position:absolute;left:2px;top:.55em;width:6px;height:6px;border-radius:50%;
+    background:var(--grad);
+  }
+  .notice li b{color:var(--ink);font-weight:600}
+
+  .foot{
+    margin-top:22px;text-align:center;font-size:.75rem;color:var(--ink-dim);line-height:1.6;
+  }
+  .foot code{font-family:var(--mono);color:var(--ink-mid)}
+
+  /* ---------- toasts ---------- */
+  .toasts{
+    position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));
+    transform:translateX(-50%);z-index:50;
+    display:flex;flex-direction:column;gap:8px;align-items:center;width:max-content;max-width:92vw;
+    pointer-events:none;
+  }
+  .toast{
+    background:#141d30;color:var(--ink);border:1px solid var(--line-strong);
+    padding:12px 18px;border-radius:13px;font-size:.9rem;font-weight:600;
+    box-shadow:0 16px 40px -12px rgba(0,0,0,.7);
+    display:flex;align-items:center;gap:9px;
+    opacity:0;transform:translateY(12px);transition:opacity .25s,transform .25s;
+    max-width:100%;
+  }
+  .toast.show{opacity:1;transform:translateY(0)}
+  .toast__ico{flex:none;width:18px;height:18px}
+  .toast--ok .toast__ico{color:var(--ok)}
+  .toast--warn .toast__ico{color:var(--warn)}
+  .toast--bad .toast__ico{color:var(--bad)}
+
+  @media (max-width:360px){
+    .card{padding:26px 16px 22px}
+    .metric__v{font-size:.9rem}
+    .brand__name{font-size:1.55rem}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+  }
+</style>
+</head>
+<body>
+  <main class="card" role="main">
+
+    <!-- Brand -->
+    <header class="brand">
+      <svg class="brand__logo" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs>
+          <linearGradient id="hex" x1="8" y1="6" x2="56" y2="60" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#22d3ee"/><stop offset=".5" stop-color="#7c8cf8"/><stop offset="1" stop-color="#a855f7"/>
+          </linearGradient>
+        </defs>
+        <path d="M32 4 L56.25 18 L56.25 46 L32 60 L7.75 46 L7.75 18 Z" fill="url(#hex)"/>
+        <path d="M32 4 L56.25 18 L56.25 46 L32 60 L7.75 46 L7.75 18 Z" fill="none" stroke="rgba(255,255,255,.28)" stroke-width="1.2"/>
+        <path d="M21 23 L32 43 L43 23" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h1 class="brand__name">VYD Network</h1>
+      <p class="brand__tag">빠르고 안전한 EVM 기반 프라이빗 블록체인</p>
+    </header>
+
+    <!-- Live status -->
+    <div class="live" id="live" data-state="checking" role="status" aria-live="polite">
+      <span class="live__dot" aria-hidden="true"></span>
+      <span class="live__text" id="liveText">VYD Network 연결 확인 중</span>
+    </div>
+
+    <!-- Metrics -->
+    <div class="metrics">
+      <div class="metric">
+        <span class="metric__k">체인 ID</span>
+        <span class="metric__v">7603</span>
+      </div>
+      <div class="metric">
+        <span class="metric__k">최신 블록</span>
+        <span class="metric__v" id="blockNum">—</span>
+      </div>
+      <div class="metric">
+        <span class="metric__k">RPC 상태</span>
+        <span class="metric__v" id="rpcState" data-live="checking">확인 중</span>
+      </div>
+    </div>
+
+    <!-- Lead -->
+    <p class="lead">버튼 한 번으로 <b>VYD 네트워크</b>를<br>MetaMask에 추가할 수 있습니다.</p>
+
+    <!-- Actions -->
+    <div class="cta-group">
+      <button class="btn btn--primary" id="addBtn" type="button">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>
+        </svg>
+        <span class="btn__label">VYD 네트워크 추가하기</span>
+      </button>
+
+      <button class="btn btn--outline" id="openAppBtn" type="button">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="btn__label">MetaMask 앱에서 열기</span>
+      </button>
+
+      <button class="btn btn--ghost" id="copyToggle" type="button">네트워크 정보 직접 복사하기</button>
+    </div>
+
+    <!-- QR -->
+    <div class="qr">
+      <div class="qr__frame">
+        <div id="qrcode" aria-label="VYD Network 연결 페이지 QR 코드"></div>
+        <div class="qr__logo" aria-hidden="true">
+          <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M32 4 L56.25 18 L56.25 46 L32 60 L7.75 46 L7.75 18 Z" fill="url(#hex)"/>
+            <path d="M21 23 L32 43 L43 23" fill="none" stroke="#fff" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+      <p class="qr__caption">QR 코드를 스캔하고 VYD 네트워크를<br>MetaMask에 추가하세요.</p>
+    </div>
+
+    <!-- Manual registration -->
+    <section class="manual" id="manual" aria-labelledby="manualTitle">
+      <h2 class="sec-title" id="manualTitle">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="9" y="9" width="11" height="11" rx="2.5" stroke="currentColor" stroke-width="2"/>
+          <path d="M5 15V6a1 1 0 0 1 1-1h9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        직접 등록용 정보
+      </h2>
+      <p class="sec-sub">자동 등록이 어려울 때 MetaMask에 직접 입력하세요.</p>
+
+      <div class="rows" id="rows">
+        <!-- rows injected -->
+      </div>
+
+      <button class="copy-all" id="copyAll" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="8" y="8" width="12" height="12" rx="2.5" stroke="currentColor" stroke-width="2"/>
+          <path d="M4 14V5a1 1 0 0 1 1-1h9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        전체 정보 복사
+      </button>
+    </section>
+
+    <!-- Security notice -->
+    <aside class="notice" aria-label="보안 안내">
+      <div class="notice__head">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 3 4 6v6c0 4.5 3.2 7.8 8 9 4.8-1.2 8-4.5 8-9V6l-8-3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+          <path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        안전하게 사용하기
+      </div>
+      <ul>
+        <li>네트워크 추가 과정에서 <b>시드 문구나 개인키를 요구하지 않습니다.</b></li>
+        <li>MetaMask에서 표시되는 <b>네트워크 정보를 확인한 후 승인</b>해 주세요.</li>
+        <li>VYD 토큰을 확인하려면 반드시 <b>공식 RPC URL</b>을 사용해 주세요.</li>
+      </ul>
+    </aside>
+
+    <p class="foot">
+      공식 RPC · <code>https://vyd.mustree.kr</code><br>
+      Clique PoA · 약 2초 블록 · EVM 호환 프라이빗 체인
+    </p>
+  </main>
+
+  <div class="toasts" id="toasts" aria-live="assertive"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+  (function(){
+    "use strict";
+
+    /* ---------------- Config ---------------- */
+    var RPC_URL     = "https://vyd.mustree.kr";
+    var CONNECT_URL = "https://rich-hyun.github.io/vyd-network/";
+    var DEEPLINK    = "https://metamask.app.link/dapp/rich-hyun.github.io/vyd-network/";
+    var CHAIN_HEX   = "0x1db3"; // 7603
+
+    // Object passed to wallet_addEthereumChain — no blockExplorerUrls (none available yet)
+    var vydNetwork = {
+      chainId: CHAIN_HEX,
+      chainName: "VYD Network",
+      nativeCurrency: { name: "VYD", symbol: "VYD", decimals: 18 },
+      rpcUrls: [ RPC_URL ]
+    };
+
+    var isMobile = /android|iphone|ipad|ipod|iemobile|blackberry|windows phone/i.test(navigator.userAgent || "");
+    var hasEthereum = typeof window.ethereum !== "undefined";
+
+    var $ = function(id){ return document.getElementById(id); };
+
+    /* ---------------- Toast ---------------- */
+    var ICONS = {
+      ok:   '<path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
+      warn: '<path d="M12 9v4m0 4h.01M10.3 4l-7 12A2 2 0 0 0 5 19h14a2 2 0 0 0 1.7-3l-7-12a2 2 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+      bad:  '<path d="M12 9v4m0 4h.01M12 3 4 6v6c0 4.5 3.2 7.8 8 9 4.8-1.2 8-4.5 8-9V6l-8-3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>'
+    };
+    function toast(msg, kind){
+      kind = kind || "ok";
+      var wrap = $("toasts");
+      var el = document.createElement("div");
+      el.className = "toast toast--" + kind;
+      el.innerHTML =
+        '<svg class="toast__ico" viewBox="0 0 24 24" fill="none" aria-hidden="true">' + (ICONS[kind]||ICONS.ok) + '</svg>' +
+        '<span></span>';
+      el.querySelector("span").textContent = msg;
+      wrap.appendChild(el);
+      requestAnimationFrame(function(){ el.classList.add("show"); });
+      setTimeout(function(){
+        el.classList.remove("show");
+        setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 300);
+      }, 3000);
+    }
+
+    /* ---------------- MetaMask: add / switch ---------------- */
+    function nested4902(err){
+      if(!err) return false;
+      if(err.code === 4902) return true;
+      if(err.data && err.data.originalError && err.data.originalError.code === 4902) return true;
+      return false;
+    }
+    function isReject(err){
+      if(!err) return false;
+      if(err.code === 4001) return true;
+      if(err.data && err.data.originalError && err.data.originalError.code === 4001) return true;
+      return false;
+    }
+
+    function setBusy(btn, on){
+      if(on) btn.setAttribute("aria-busy","true");
+      else   btn.removeAttribute("aria-busy");
+    }
+
+    async function connectVydNetwork(){
+      var btn = $("addBtn");
+
+      if(!window.ethereum){
+        if(isMobile){
+          toast("MetaMask 앱 브라우저로 열어주세요.", "warn");
+          setTimeout(openInMetaMask, 900);
+        }else{
+          toast("MetaMask를 설치하거나 MetaMask 앱 브라우저에서 접속해 주세요.", "warn");
+        }
+        return;
+      }
+
+      setBusy(btn, true);
+      try{
+        // 이미 추가된 경우: 먼저 전환을 시도
+        await window.ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: CHAIN_HEX }]
+        });
+        toast("VYD 네트워크로 전환되었습니다.", "ok");
+      }catch(switchError){
+        if(nested4902(switchError)){
+          // 네트워크가 없으면 추가
+          try{
+            await window.ethereum.request({
+              method: "wallet_addEthereumChain",
+              params: [ vydNetwork ]
+            });
+            toast("VYD 네트워크가 MetaMask에 추가되었습니다.", "ok");
+          }catch(addError){
+            if(isReject(addError)){
+              toast("사용자가 네트워크 추가 요청을 취소했습니다.", "warn");
+            }else{
+              console.error(addError);
+              toast("VYD 네트워크 추가에 실패했습니다. RPC 서버 상태를 확인해 주세요.", "bad");
+            }
+          }
+        }else if(isReject(switchError)){
+          toast("사용자가 요청을 취소했습니다.", "warn");
+        }else{
+          console.error(switchError);
+          toast("VYD 네트워크 연결에 실패했습니다.", "bad");
+        }
+      }finally{
+        setBusy(btn, false);
+      }
+    }
+
+    function openInMetaMask(){
+      if(isMobile){
+        window.location.href = DEEPLINK;
+      }else{
+        toast("모바일은 MetaMask 앱, PC는 MetaMask 확장 프로그램을 사용해 주세요.", "warn");
+      }
+    }
+
+    /* ---------------- Copy ---------------- */
+    async function copyText(text){
+      try{
+        await navigator.clipboard.writeText(text);
+        return true;
+      }catch(e){
+        try{
+          var ta = document.createElement("textarea");
+          ta.value = text;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.focus(); ta.select();
+          var ok = document.execCommand("copy");
+          document.body.removeChild(ta);
+          return ok;
+        }catch(e2){ return false; }
+      }
+    }
+
+    /* ---------------- Manual info rows ---------------- */
+    var FIELDS = [
+      { k:"네트워크 이름", v:"VYD Network",              copy:true },
+      { k:"RPC URL",      v:"https://vyd.mustree.kr",     copy:true },
+      { k:"체인 ID",       v:"7603",                       copy:true },
+      { k:"통화 기호",     v:"VYD",                        copy:true },
+      { k:"블록 탐색기",   v:"현재 제공되지 않음",          copy:false }
+    ];
+    var COPY_ICON = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2.5" stroke="currentColor" stroke-width="2"/><path d="M4 14V5a1 1 0 0 1 1-1h9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+    var DONE_ICON = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+    function buildRows(){
+      var rows = $("rows");
+      FIELDS.forEach(function(f){
+        var row = document.createElement("div");
+        row.className = "row";
+
+        var body = document.createElement("div");
+        body.className = "row__body";
+        var k = document.createElement("span"); k.className = "row__k"; k.textContent = f.k;
+        var v = document.createElement("span"); v.className = "row__v" + (f.copy ? "" : " row__v--muted"); v.textContent = f.v;
+        body.appendChild(k); body.appendChild(v);
+        row.appendChild(body);
+
+        if(f.copy){
+          var btn = document.createElement("button");
+          btn.className = "copy";
+          btn.type = "button";
+          btn.setAttribute("aria-label", f.k + " 복사");
+          btn.innerHTML = COPY_ICON;
+          btn.addEventListener("click", function(){
+            copyText(f.v).then(function(ok){
+              if(ok){
+                toast("복사되었습니다.", "ok");
+                btn.classList.add("done");
+                btn.innerHTML = DONE_ICON;
+                setTimeout(function(){ btn.classList.remove("done"); btn.innerHTML = COPY_ICON; }, 1400);
+              }else{
+                toast("복사에 실패했습니다.", "bad");
+              }
+            });
+          });
+          row.appendChild(btn);
+        }
+        rows.appendChild(row);
+      });
+    }
+
+    function copyAllInfo(){
+      var text =
+        "네트워크 이름: VYD Network\n" +
+        "RPC URL: https://vyd.mustree.kr\n" +
+        "체인 ID: 7603\n" +
+        "통화 기호: VYD\n" +
+        "블록 탐색기: 현재 제공되지 않음";
+      copyText(text).then(function(ok){
+        toast(ok ? "복사되었습니다." : "복사에 실패했습니다.", ok ? "ok" : "bad");
+      });
+    }
+
+    /* ---------------- RPC status ---------------- */
+    async function rpcCall(method, params){
+      var ctrl = new AbortController();
+      var timer = setTimeout(function(){ ctrl.abort(); }, 8000);
+      try{
+        var res = await fetch(RPC_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ jsonrpc:"2.0", method:method, params:params||[], id:1 }),
+          signal: ctrl.signal
+        });
+        if(!res.ok) throw new Error("HTTP " + res.status);
+        var data = await res.json();
+        return data.result;
+      }finally{
+        clearTimeout(timer);
+      }
+    }
+
+    function setStatus(state){
+      var live = $("live");
+      var text = $("liveText");
+      var rpcState = $("rpcState");
+      live.setAttribute("data-state", state);
+      rpcState.setAttribute("data-live", state);
+      if(state === "online"){
+        text.textContent = "VYD Network 정상 운영 중";
+        rpcState.textContent = "정상";
+      }else if(state === "offline"){
+        text.textContent = "VYD Network에 연결할 수 없음";
+        rpcState.textContent = "연결 안됨";
+      }else{
+        text.textContent = "VYD Network 연결 확인 중";
+        rpcState.textContent = "확인 중";
+      }
+    }
+
+    async function refreshBlock(){
+      try{
+        var bn = await rpcCall("eth_blockNumber");
+        if(typeof bn === "string" && bn.indexOf("0x") === 0){
+          var num = parseInt(bn, 16);
+          if(!isNaN(num)) $("blockNum").textContent = num.toLocaleString("en-US");
+        }
+      }catch(e){ /* keep last value */ }
+    }
+
+    async function checkRpcStatus(){
+      try{
+        var chainId = await rpcCall("eth_chainId");
+        var ok = (typeof chainId === "string") && (chainId.toLowerCase() === CHAIN_HEX);
+        if(ok){
+          setStatus("online");
+          await refreshBlock();
+          return true;
+        }
+        setStatus("offline");
+        return false;
+      }catch(e){
+        console.warn("RPC status check failed:", e && e.message);
+        setStatus("offline");
+        return false;
+      }
+    }
+
+    var online = false;
+    function startPolling(){
+      checkRpcStatus().then(function(ok){ online = ok; });
+      // 체인 상태: 20초마다 / 블록: 온라인일 때 6초마다
+      setInterval(function(){ checkRpcStatus().then(function(ok){ online = ok; }); }, 20000);
+      setInterval(function(){ if(online) refreshBlock(); }, 6000);
+    }
+
+    /* ---------------- QR ---------------- */
+    function renderQR(){
+      var holder = $("qrcode");
+      if(typeof QRCode === "undefined"){
+        holder.innerHTML =
+          '<div class="qr__fallback">QR 코드를 불러오지 못했습니다.<br>아래 주소로 접속해 주세요.<br>' +
+          '<a href="' + CONNECT_URL + '">' + CONNECT_URL + '</a></div>';
+        return;
+      }
+      holder.innerHTML = "";
+      // 오류 복원 수준 H(최대 30%) — 중앙 로고를 덮어도 인식 가능
+      new QRCode(holder, {
+        text: CONNECT_URL,
+        width: 182,
+        height: 182,
+        colorDark: "#0a0f1e",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }
+
+    /* ---------------- Init ---------------- */
+    function init(){
+      buildRows();
+      renderQR();
+
+      $("addBtn").addEventListener("click", connectVydNetwork);
+      $("openAppBtn").addEventListener("click", openInMetaMask);
+      $("copyAll").addEventListener("click", copyAllInfo);
+      $("copyToggle").addEventListener("click", function(){
+        var m = $("manual");
+        m.scrollIntoView({ behavior:"smooth", block:"start" });
+      });
+
+      // 이미 지갑 브라우저(window.ethereum 존재) 안이면 "앱에서 열기"는 불필요
+      if(hasEthereum){
+        $("openAppBtn").style.display = "none";
+      }
+
+      startPolling();
+    }
+
+    if(document.readyState === "loading"){
+      document.addEventListener("DOMContentLoaded", init);
+    }else{
+      init();
+    }
+  })();
+  </script>
+</body>
+</html>
